@@ -1,0 +1,1 @@
+export const UPDATE_CONTACT = 'UPDATE_CONTACT'
