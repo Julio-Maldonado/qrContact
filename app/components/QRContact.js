@@ -1,85 +1,81 @@
 import React, {Component} from 'react'
 import {Text, View} from 'react-native'
 import QRCode from 'react-native-qrcode'
+import {Actions} from 'react-native-router-flux'
 import createStyles from './styles'
+import {generateVCard} from './helperFunctions'
 import Button from '../customComponents/Button'
 import StatusBar from '../customComponents/MyStatusBar'
-import {Actions} from 'react-native-router-flux'
+import PropTypes from 'prop-types'
 
 const styles = createStyles()
 
-export default class QRContact extends Component {
-  componentDidMount() {
-    // contact.photo.attachFromUrl('https://avatars2.githubusercontent.com/u/5659221?v=3&s=460', 'JPEG');
-    // contact.workPhone = '312-555-1212';
-    // contact.birthday = new Date('01-01-1985');
-    // contact.title = 'Software Developer';
-    // contact.url = 'https://github.com/enesser';
-    // contact.note = 'Notes on Eric';
+const ConditionalText = (props) => {
+  let {text, style} = props
+  console.log('text =', text)
+  return (text !== "") ? <Text style={style}>{`${text}`}</Text> : null
+}
 
-    // //save to file
-    // contact.saveToFile('./eric-nesser.vcf');
-    // //get as formatted string
-    // console.log(contact.getFormattedString());
-    console.log('hey')
+class QRContact extends Component {
+  onButtonPress = () => {
+    // persistor.purge();
+    if (this.props.firstVisit)
+      Actions.pop()
+    else
+      Actions.EditContact({...this.props})
   }
 
-  onButtonPress = () => {
-    Actions.pop()
+  componentWillReceiveProps(props) {
+    console.log("QRContact received props =", props)
   }
 
   render() {
-    let {vCard, contactData} = this.props
-    console.log(vCard.message)
+    let {contact} = this.props
+    console.log("QRContact rendered this.props =", this.props)
+    let vCard = generateVCard(contact)
+    // console.log({vCard})
     return (
       <View style={styles.centerContainer}>
         <StatusBar barStyle="dark-content" />
         <QRCode
           value={vCard.message}
           size={300}
-          bgColor='black'
-          fgColor='white'/>
-        {contactData.firstName !== undefined ? 
-          <Text style={styles.boldText}>{`${contactData.firstName} ${contactData.lastName}`}</Text>
-          :
-          null
-        }
-        {contactData.phoneNumber !== undefined ? 
-          <Text style={styles.text}>{contactData.phoneNumber}</Text>
-          :
-          null
-        }
-        {contactData.instagramUsername !== undefined ? 
-          <Text style={styles.facebookText}>{contactData.instagramUsername}</Text>
-          :
-          null
-        }
-        {contactData.twitterUsername !== undefined ? 
-          <Text style={styles.text}>{contactData.twitterUsername}</Text>
-          :
-          null
-        }
-        {contactData.facebookURL !== undefined ? 
-          <Text style={styles.instagramText}>{contactData.facebookURL}</Text>
-          :
-          null
-        }
-        {contactData.companyName !== undefined ? 
-          <Text style={styles.boldText}>{contactData.companyName}</Text>
-          :
-          null
-        }
-        {contactData.title !== undefined ? 
-          <Text style={styles.italicText}>{contactData.title}</Text>
-          :
-          null
-        }
+          bgColor='#47A6D6'
+          fgColor='white' />
+        <ConditionalText
+          text={`${contact.firstName} ${contact.lastName}`}
+          style={styles.boldText} />
+        <ConditionalText
+          text={contact.phoneNumber}
+          style={styles.text} />
+        <ConditionalText
+          text={contact.instagramUsername}
+          style={styles.instagramText} />
+        <ConditionalText
+          text={contact.twitterUsername}
+          style={styles.twitterText} />
+        <ConditionalText
+          text={contact.facebookURL}
+          style={styles.facebookText} />
+        <ConditionalText
+          text={contact.companyName}
+          style={styles.boldText} />
+        <ConditionalText
+          text={contact.title}
+          style={styles.italicText} />
         <Button
           style={styles.button}
           textStyle={styles.buttonText}
-          text='Edit my Contact'
+          text='Edit my SQR'
           onPress={() => this.onButtonPress()} />
       </View>
     )
   }
 }
+
+QRContact.propTypes = {
+  contact: PropTypes.object.isRequired,
+  firstVisit: PropTypes.bool.isRequired
+}
+
+export default QRContact

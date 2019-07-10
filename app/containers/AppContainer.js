@@ -1,20 +1,29 @@
+import React from 'react'
 import {connect} from 'react-redux'
-import App from '../components/Route'
-import {updateContact} from '../actions/index'
+import Scenes from '../components/Scenes'
+import {Router} from 'react-native-router-flux'
 
-const mapStateToProps = (state) => ({
-	contact: state.contact
-})
+// import {updateContact} from '../actions/index'
+// import {updateFirstVisit} from '../actions/index'
 
-const mapDispatchToProps = (dispatch) => ({
-	updateContact: (contact) => {
-		dispatch(updateContact(contact))
-	},
-})
+// const mapStateToProps = (state) => ({
+// 	contact: state.contact,
+// 	firstVisit: state.firstVisit
+// })
 
-const AppContainer = connect(
-	mapStateToProps,
-	mapDispatchToProps,
-)(App)
+// const mapDispatchToProps = (dispatch) => ({
+// 	updateContact: (contact) => {
+// 		dispatch(updateContact(contact))
+// 	},
+// 	updateFirstVisit: (firstVisit) => {
+// 		dispatch(updateFirstVisit(firstVisit))
+// 	}
+// })
+
+const ConnectedRouter = connect()(Router)
+
+const AppContainer = () => (
+	<ConnectedRouter scenes={Scenes} />
+)
 
 export default AppContainer
