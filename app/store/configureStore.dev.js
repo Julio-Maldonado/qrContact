@@ -1,28 +1,44 @@
 import {createStore, applyMiddleware, compose} from 'redux'
-import {devToolsEnhancer} from 'redux-devtools-extension'
-//import thunk from 'redux-thunk'
-import rootReducer from '../reducers'
+import {createLogger} from 'redux-logger'
+import rootReducer from '../reducers/index'
+import {persistStore, persistReducer } from 'redux-persist'
+import storage from 'redux-persist/lib/storage';
+// import autoMergeLevel2 from 'redux-persist/lib/stateReconciler/autoMergeLevel2';
 
-// const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
-const configureStore = (preloadedState) => {
-	const store = createStore(
-		rootReducer,
-		// window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__(),
-		//preloadedState, // can replace w JSON object/events
-		devToolsEnhancer() // can add enhancers here
-	)
-	console.log(store.getState())
-	console.log(window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
-	// if (module.hot) {
-	// 	module.hot.accept('../reducers', () => {
-	// 		store.replaceReducer(rootReducer)
-	// 	})
-	// 	console.log("test")
-	// }
+const loggerMiddleware = createLogger({ predicate: (getState, action) => __DEV__ })
 
-	// store.dispatch({type: 'FETCH_USERS'})
-	// can be used to pre load state from server
-	return store
-}
+const persistConfig = {
+	key: 'root',
+	storage,
+  }
+  
+  const persistedReducer = persistReducer(persistConfig, rootReducer)
 
-export default configureStore
+// const pReducer = persistReducer(persistConfig, rootReducer)
+// export const store = createStore(pReducer);
+// export const persistor = persistStore(store);
+
+// const configureStore = (preloadedState) => {
+// 	const store = createStore(
+// 		// rootReducer,
+// 		persistedReducer,
+// 		// preloadedState,
+// 		// compose(
+// 		// 	applyMiddleware(loggerMiddleware),
+// 		// 	// autoRehydrate()
+// 		// )
+// 	)
+
+// 	console.log("store.getState() =", store.getState())
+
+// 	// if (module.hot) {
+// 	// 	module.hot.accept('../reducers', () => {
+// 	// 		store.replaceReducer(rootReducer)
+// 	// 	})
+// 	// }
+
+// 	return store
+// }
+
+export const store = createStore(persistedReducer, compose(applyMiddleware(loggerMiddleware)))
+export const persistor = persistStore(store)

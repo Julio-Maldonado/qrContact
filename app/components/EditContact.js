@@ -1,23 +1,29 @@
 import React, {Component} from 'react'
-import {View, TextInput, Image} from 'react-native'
+import {View, TextInput, Text} from 'react-native'
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view'
 import createStyles from './styles'
 import Button from '../customComponents/Button'
 import StatusBar from '../customComponents/MyStatusBar'
 import {Actions} from 'react-native-router-flux'
-import {generateVCard, adjustPhoneNumber} from './helperFunctions'
+import {adjustPhoneNumber, generateVCard} from './helperFunctions'
+import QRCode from 'react-native-qrcode'
+import Icon from 'react-native-vector-icons/FontAwesome'
+import {appName} from '../constants/variables'
+import PropTypes from 'prop-types'
 
 const styles = createStyles()
 
-export default class EditContact extends Component {
+class EditContact extends Component {
   state = {
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
-    instagramUsername: "",
-    twitterUsername: "",
-    facebookURL: "",
-    companyName: "",
-    title: ""
+    firstName: this.props.contact.firstName,
+    lastName: this.props.contact.lastName,
+    phoneNumber: this.props.contact.phoneNumber,
+    instagramUsername: this.props.contact.instagramUsername,
+    twitterUsername: this.props.contact.twitterUsername,
+    facebookURL: this.props.contact.facebookURL,
+    companyName: this.props.contact.companyName,
+    title: this.props.contact.title,
+    vCard: {'error': false, 'message': ''}
   }
 
   updateFirstName = (text) => { this.setState({ firstName: text }) }
@@ -30,108 +36,148 @@ export default class EditContact extends Component {
 
   updateTwitterUsername = (text) => { this.setState({ twitterUsername: text }) }
 
-  updateFacebookURL = (text) => { this.setState({ facebookURL: text }) }
+  updateFacebookID = (text) => { this.setState({ facebookURL: text }) }
 
   updateCompanyName = (text) => { this.setState({ companyName: text }) }
 
   updateTitle = (text) => { this.setState({ title: text }) }
 
-  componentDidMount() {console.log('this.props =', this.props) }
+  onButtonPress = async () => {
+    let contact = {...this.state}
+    await this.props.updateContact(contact)
+    if (this.props.firstVisit)
+      Actions.QRContact({'firstVisit':this.props.firstVisit, contact})
+    else // pops current view & refreshes w passed props
+      Actions.pop({refresh: {contact}})
+  }
 
-  onButtonPress = () => {
-    let {
-      firstName,
-      lastName,
-      phoneNumber,
-      instagramUsername,
-      twitterUsername,
-      facebookURL,
-      companyName,
-      title
-    } = this.state
+  inputs = {}
 
-    let contactData = {
-      firstName,
-      lastName,
-      phoneNumber,
-      instagramUsername,
-      twitterUsername,
-      facebookURL,
-      companyName,
-      title
-    }
-
-    // this.props.updateContact(this.state)
-    console.log('this.props.contact =', this.state)
-    let qrData = generateVCard(this.props.contact)
-    console.log('qrData =', qrData)
-    Actions.QRContact({ vCard: qrData, contactData })
+  focusNextField = (id) => {
+    this.inputs[id].focus()
+    let vCard = generateVCard({...this.state})
+    this.setState({vCard})
   }
 
   render() {
+    let {vCard} = this.state
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" />
-        <Image
-          style={styles.image}
-          source={require('../assets/simpleQR.png')}
-        />
-        <View style={styles.form}>
-          <TextInput
-            style={styles.firstNameInput}
-            onChangeText={(text) => this.updateFirstName(text)}
-            value={this.state.firstName}
-            placeholder={'First Name'}
-          />
-          <TextInput
-            style={styles.lastNameInput}
-            onChangeText={(text) => this.updateLastName(text)}
-            value={this.state.lastName}
-            placeholder={'Last Name'}
-          />
-          <TextInput
-            style={styles.phoneNumberInput}
-            onChangeText={(text) => this.updatePhoneNumber(text)}
-            value={this.state.phoneNumber}
-            placeholder={'Phone Number'}
-          />
-          <TextInput
-            style={styles.usernameInput}
-            onChangeText={(text) => this.updateInstagramUsername(text)}
-            value={this.state.instagramUsername}
-            placeholder={'Instagram Username'}
-          />
-          <TextInput
-            style={styles.usernameInput}
-            onChangeText={(text) => this.updateTwitterUsername(text)}
-            value={this.state.twitterUsername}
-            placeholder={'Twitter Username'}
-          />
-          <TextInput
-            style={styles.facebookInput}
-            onChangeText={(text) => this.updateFacebookURL(text)}
-            value={this.state.facebookURL}
-            placeholder={'Facebook ID'}
-          />
-          <TextInput
-            style={styles.companyNameInput}
-            onChangeText={(text) => this.updateCompanyName(text)}
-            value={this.state.companyName}
-            placeholder={'Company Name'}
-          />
-          <TextInput
-            style={styles.titleInput}
-            onChangeText={(text) => this.updateTitle(text)}
-            value={this.state.title}
-            placeholder={'Title'}
-          />
+        <StatusBar barStyle="dark-content" />
+        <Text style={styles.title}>{appName}</Text>
+        <View style={styles.logo}>
+          <View style={styles.person}>
+            <Icon name="user" color="#47A6D6" size={55} />
+          </View>
+          <QRCode
+            value={vCard.message === "" ? 'https://bit.ly/2XCoUvz' : vCard.message}
+            // value={'https://bit.ly/2XCoUvz'}
+            size={150}
+            bgColor='#47A6D6'
+            fgColor='white' />
         </View>
-        <Button
-          style={styles.button}
-          textStyle={styles.buttonText}
-          text='QR my Contact'
-          onPress={() => this.onButtonPress()} />
+        {/* Update form to be categorized (Name, Phone #, Social, Business)*/}
+        <View style={styles.formContainer}>
+            <KeyboardAwareScrollView
+              extraScrollHeight={-130}>
+              <View>
+              <TextInput
+                autoFocus
+                placeholder={'First Name'}
+                value={this.state.firstName}
+                style={styles.firstNameInput}
+                onChangeText={(text) => this.updateFirstName(text)}
+                returnKeyType={"next"}
+                blurOnSubmit={false}
+                onSubmitEditing={() => this.focusNextField('lastNameFocus')}
+              />
+              <TextInput
+                placeholder={'Last Name'}
+                value={this.state.lastName}
+                style={styles.lastNameInput}
+                onChangeText={(text) => this.updateLastName(text)}
+                returnKeyType={"next"}
+                blurOnSubmit={false}
+                ref={input => this.inputs['lastNameFocus'] = input}
+                onSubmitEditing={() => this.focusNextField('phoneNumberFocus')}
+              />
+              <TextInput
+                placeholder={'Phone Number'}
+                value={this.state.phoneNumber}
+                style={styles.phoneNumberInput}
+                onChangeText={(text) => this.updatePhoneNumber(text)}
+                returnKeyType={"next"}
+                blurOnSubmit={false}
+                ref={input => this.inputs['phoneNumberFocus'] = input}
+                onSubmitEditing={() => this.focusNextField('instagramUsernameFocus')}
+              />
+              <TextInput
+                placeholder={'Instagram Username'}
+                value={this.state.instagramUsername}
+                style={styles.usernameInput}
+                onChangeText={(text) => this.updateInstagramUsername(text)}
+                returnKeyType={"next"}
+                blurOnSubmit={false}
+                ref={input => this.inputs['instagramUsernameFocus'] = input}
+                onSubmitEditing={() => this.focusNextField('twitterHandleFocus')}
+              />
+              <TextInput
+                value={this.state.twitterUsername}
+                placeholder={'Twitter Username'}
+                style={styles.usernameInput}
+                onChangeText={(text) => this.updateTwitterUsername(text)}
+                returnKeyType={"next"}
+                blurOnSubmit={false}
+                ref={input => this.inputs['twitterHandleFocus'] = input}
+                onSubmitEditing={() => this.focusNextField('facebookIDFocus')}
+              />
+              <TextInput
+                value={this.state.facebookURL}
+                placeholder={'Facebook ID'}
+                style={styles.facebookInput}
+                onChangeText={(text) => this.updateFacebookID(text)}
+                returnKeyType={"next"}
+                blurOnSubmit={false}
+                ref={input => this.inputs['facebookIDFocus'] = input}
+                onSubmitEditing={() => this.focusNextField('companyNameFocus')}
+              />
+              <TextInput
+                value={this.state.companyName}
+                placeholder={'Company Name'}
+                style={styles.companyNameInput}
+                onChangeText={(text) => this.updateCompanyName(text)}
+                returnKeyType={"next"}
+                blurOnSubmit={false}
+                ref={input => this.inputs['companyNameFocus'] = input}
+                onSubmitEditing={() => this.focusNextField('titleFocus')}
+              />
+              <TextInput
+                value={this.state.title}
+                placeholder={'Title'}
+                style={styles.titleInput}
+                onChangeText={(text) => this.updateTitle(text)}
+                returnKeyType={"done"}
+                blurOnSubmit={true}
+                ref={input => this.inputs['titleFocus'] = input}
+                onSubmitEditing={() => this.focusNextField('titleFocus')}
+              />
+              </View>
+            </KeyboardAwareScrollView>
+        </View>
+          <Button // maybe pass off generated QR here? unless dont wanna dynamically update SQR
+            style={styles.button}
+            textStyle={styles.buttonText}
+            text='Done'
+            onPress={() => this.onButtonPress()} />
       </View>
     )
   }
 }
+
+EditContact.propTypes = {
+  contact: PropTypes.object.isRequired,
+  firstVisit: PropTypes.bool.isRequired,
+  updateContact: PropTypes.func.isRequired
+}
+
+export default EditContact
