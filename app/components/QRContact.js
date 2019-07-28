@@ -28,6 +28,7 @@ class QRContact extends Component {
   render() {
     let {contact} = this.props
     let vCard = generateVCard(contact)
+    console.log({vCard})
     return (
       <View style={styles.centerContainer}>
         <StatusBar barStyle="dark-content" />

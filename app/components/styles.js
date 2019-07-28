@@ -85,9 +85,9 @@ const baseStyles = {
 		marginTop: hp('1%'),
 		backgroundColor: "#fff",
 		width: wp('44%'),
-		height: wp('44%'),
+		height: wp('44%'), // change to 44.5% to hide black, idky this isn't proper
 		justifyContent: 'center',
-		alignItems: 'center'
+		alignItems: 'center',
 	},
 	person: {
 		position: 'absolute',
@@ -99,6 +99,18 @@ const baseStyles = {
 		zIndex: 2,
 		backgroundColor: 'white'
 	},
+	evenSpaceContainer: {
+		// flex: 1,
+		flexDirection: 'row',
+		width: wp('100%'),
+		height: hp('4%'),
+		alignItems: 'center',
+		justifyContent: 'space-evenly',
+		margin: 0,
+		padding: 0
+	},
+	cancelIcon: {alignItems: 'center'},
+	confirmIcon: {alignItems: 'center'},
 	form: {
 		height: 'auto',
 		flex: 1,
@@ -110,7 +122,7 @@ const baseStyles = {
 		borderRadius: 5,
 		borderWidth: hp('0.5%'),
 		borderColor: '#D5DCDF',
-		marginTop: hp('3%'),
+		// marginTop: hp('3%'),
 		backgroundColor: '#F0F7FA',
 		height: hp('36.7%'),
 	},
@@ -176,7 +188,24 @@ const baseStyles = {
 		textAlign: 'center',
 		marginBottom: 0,
 		paddingBottom: 0,
-    },
+	},
+	evenSpaceButton: {
+		alignItems: 'center',
+		backgroundColor: "#47a6d6",
+		borderWidth: 1,
+		borderColor: "#fff",
+		width: wp("10%"),
+		height: wp("10%"),
+		borderRadius: wp("5%"),
+		// marginTop: hp("5%"),
+		justifyContent: "center",
+		shadowOffset: {width: 0, height: 1},
+		shadowColor: "#000",
+		shadowOpacity: 0.35,
+		shadowRadius: 5,
+		elevation: 2,
+		marginBottom: 0
+	},
     button: {
 		alignItems: 'center',
 		backgroundColor: "#47a6d6",

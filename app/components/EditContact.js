@@ -1,6 +1,7 @@
 import React, {Component} from 'react'
-import {View, TextInput, Text} from 'react-native'
+import {View, TextInput, Text, TouchableHighlight} from 'react-native'
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view'
+import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen'
 import createStyles from './styles'
 import Button from '../customComponents/Button'
 import StatusBar from '../customComponents/MyStatusBar'
@@ -30,7 +31,11 @@ class EditContact extends Component {
 
   updateLastName = (text) => { this.setState({ lastName: text }) }
 
-  updatePhoneNumber = (text) => { this.setState({ phoneNumber: adjustPhoneNumber(text) }) }
+  updatePhoneNumber = (text) => {
+    this.setState({ phoneNumber: adjustPhoneNumber(text) })
+    if (text.length === 13)
+      this.focusNextField('instagramUsernameFocus')
+  }
 
   updateInstagramUsername = (text) => { this.setState({ instagramUsername: text }) }
 
@@ -42,9 +47,26 @@ class EditContact extends Component {
 
   updateTitle = (text) => { this.setState({ title: text }) }
 
-  onButtonPress = async () => {
+  confirmEdit = async () => {
     let contact = {...this.state}
+    if (contact['vCard'] !== undefined)
+      delete contact['vCard']
+
     await this.props.updateContact(contact)
+
+    if (this.props.firstVisit)
+      Actions.QRContact({'firstVisit': this.props.firstVisit, contact})
+    else // pops current view & refreshes w passed props
+      Actions.pop({refresh: {contact}})
+  }
+
+  cancelEdit = async () => {
+    // this only works when I spread the props.contact, why tho?
+    let contact = {...this.props.contact}
+    // why does redux erase my memory when I don't run this?
+    // shouldn't have to updateContact since it's the same contact
+    await this.props.updateContact(contact)
+
     if (this.props.firstVisit)
       Actions.QRContact({'firstVisit':this.props.firstVisit, contact})
     else // pops current view & refreshes w passed props
@@ -56,33 +78,72 @@ class EditContact extends Component {
   focusNextField = (id) => {
     this.inputs[id].focus()
     let vCard = generateVCard({...this.state})
-    this.setState({vCard})
+    if (this.state.vCard !== vCard)
+      this.setState({vCard})
+  }
+
+  componentDidMount() {
+    if (!this.props.firstVisit)
+      this.setState({vCard: generateVCard(this.props.contact)})
+  }
+
+  handleKeyPress = (e) => {
+    console.log(e)
   }
 
   render() {
     let {vCard} = this.state
+    // let vCard = generateVCard({...this.state})
+    // console.log(this.props.firstVisit)
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" />
         <Text style={styles.title}>{appName}</Text>
         <View style={styles.logo}>
-          <View style={styles.person}>
+          <TouchableHighlight
+            onPress={() => this.confirmEdit()}
+            style={styles.person}
+            underlayColor="#fff"
+            >
             <Icon name="user" color="#47A6D6" size={55} />
-          </View>
+          </TouchableHighlight>
           <QRCode
             value={vCard.message === "" ? 'https://bit.ly/2XCoUvz' : vCard.message}
-            // value={'https://bit.ly/2XCoUvz'}
             size={150}
             bgColor='#47A6D6'
             fgColor='white' />
         </View>
         {/* Update form to be categorized (Name, Phone #, Social, Business)*/}
-        <View style={styles.formContainer}>
+        {this.props.firstVisit === false ?
+          // if it's false, then showcase the check or cancel button for editing
+          // fix spacing issue here, should be almost on top of each other
+          <View style={styles.evenSpaceContainer}>            
+            <TouchableHighlight
+              onPress={this.cancelEdit}
+              style={styles.cancelIcon}
+              underlayColor='#fff'>
+              <Icon name="times" color="#47A6D6" size={hp('4%')} />
+            </TouchableHighlight>
+            <TouchableHighlight
+              onPress={this.confirmEdit}
+              style={styles.confirmIcon}
+              underlayColor='#fff'>
+              <Icon name="check" color="#47A6D6" size={hp('4%')} />
+            </TouchableHighlight>
+          </View>
+          :
+          null
+        }
+        <View
+          style={{...styles.formContainer, marginTop: this.props.firstVisit === true ? hp('3%') : hp('0%')}}>
             <KeyboardAwareScrollView
+              keyboardShouldPersistTaps='never'
               extraScrollHeight={-130}>
-              <View>
+              {/* <View> */}
               <TextInput
-                autoFocus
+                // onKeyPress={this.handleKeyPress}
+                // keyboardShouldPersistTaps='handled'
+                autoFocus={this.props.firstVisit === true ? true : false}
                 placeholder={'First Name'}
                 value={this.state.firstName}
                 style={styles.firstNameInput}
@@ -92,6 +153,7 @@ class EditContact extends Component {
                 onSubmitEditing={() => this.focusNextField('lastNameFocus')}
               />
               <TextInput
+                // keyboardShouldPersistTaps='handled'
                 placeholder={'Last Name'}
                 value={this.state.lastName}
                 style={styles.lastNameInput}
@@ -102,7 +164,9 @@ class EditContact extends Component {
                 onSubmitEditing={() => this.focusNextField('phoneNumberFocus')}
               />
               <TextInput
+                // keyboardShouldPersistTaps='handled'
                 placeholder={'Phone Number'}
+                keyboardType='numeric'
                 value={this.state.phoneNumber}
                 style={styles.phoneNumberInput}
                 onChangeText={(text) => this.updatePhoneNumber(text)}
@@ -112,6 +176,7 @@ class EditContact extends Component {
                 onSubmitEditing={() => this.focusNextField('instagramUsernameFocus')}
               />
               <TextInput
+                // keyboardShouldPersistTaps='handled'
                 placeholder={'Instagram Username'}
                 value={this.state.instagramUsername}
                 style={styles.usernameInput}
@@ -161,14 +226,18 @@ class EditContact extends Component {
                 ref={input => this.inputs['titleFocus'] = input}
                 onSubmitEditing={() => this.focusNextField('titleFocus')}
               />
-              </View>
+              {/* </View> */}
             </KeyboardAwareScrollView>
         </View>
+        {this.props.firstVisit === true ?
           <Button // maybe pass off generated QR here? unless dont wanna dynamically update SQR
             style={styles.button}
             textStyle={styles.buttonText}
-            text='Done'
-            onPress={() => this.onButtonPress()} />
+            text='Sqr Me'
+            onPress={() => this.confirmEdit()} />
+          :
+          null
+        }
       </View>
     )
   }
